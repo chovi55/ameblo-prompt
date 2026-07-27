@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>くるみ専用 アメブロ役立ち記事プロンプトメーカー</title>
+<style>
+  :root{
+    --bg:#fdf7f9; --card:#fff; --ink:#33292c; --sub:#8a7b80;
+    --accent:#d9769a; --accent-d:#b9527a; --line:#f0dde4; --ok:#3f9d6d;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{ --bg:#1c1719; --card:#262023; --ink:#f2eaed; --sub:#a89aa0;
+           --accent:#e58aa8; --accent-d:#f0a2bd; --line:#3a3034; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;padding:16px 14px 60px;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",sans-serif;
+    line-height:1.7;-webkit-text-size-adjust:100%}
+  .wrap{max-width:720px;margin:0 auto}
+  h1{font-size:19px;margin:0 0 4px;letter-spacing:.02em}
+  .lead{font-size:12px;color:var(--sub);margin:0 0 18px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;
+    padding:16px 14px;margin-bottom:14px}
+  .card h2{font-size:14px;margin:0 0 12px;color:var(--accent-d);
+    display:flex;align-items:center;gap:7px}
+  .card h2 .n{background:var(--accent);color:#fff;width:20px;height:20px;border-radius:50%;
+    display:grid;place-items:center;font-size:11px;flex:none}
+  label{display:block;font-size:12px;font-weight:600;margin:12px 0 5px}
+  label:first-of-type{margin-top:0}
+  .hint{font-size:11px;color:var(--sub);font-weight:400;margin-left:4px}
+  input[type=text],textarea,select{width:100%;padding:11px 12px;font-size:16px;
+    border:1px solid var(--line);border-radius:9px;background:var(--bg);color:var(--ink);
+    font-family:inherit}
+  textarea{min-height:70px;resize:vertical;line-height:1.6}
+  input:focus,textarea:focus,select:focus{outline:2px solid var(--accent);outline-offset:-1px}
+  .row{display:flex;gap:8px;flex-wrap:wrap}
+  .chip{padding:7px 12px;border:1px solid var(--line);border-radius:20px;font-size:12.5px;
+    background:var(--bg);cursor:pointer;user-select:none;transition:.12s}
+  .chip[aria-pressed=true]{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .verdict{background:var(--bg);border:1px dashed var(--accent);border-radius:10px;
+    padding:11px 13px;font-size:13px;margin-top:12px}
+  .verdict b{color:var(--accent-d)}
+  .verdict .why{display:block;font-size:11.5px;color:var(--sub);margin-top:3px}
+  .warn{background:#fff4e5;border:1px solid #f0c58a;color:#8a5a12;border-radius:10px;
+    padding:10px 12px;font-size:12px;margin-top:10px}
+  @media (prefers-color-scheme:dark){.warn{background:#3a2c14;border-color:#7a5a20;color:#f0c98a}}
+  button{font-family:inherit;font-size:15px;font-weight:600;padding:13px 16px;border:none;
+    border-radius:10px;cursor:pointer;transition:.12s}
+  button:active{transform:scale(.985)}
+  .go{width:100%;background:var(--accent);color:#fff;font-size:16px;padding:16px;margin-top:4px}
+  .ai{display:grid;grid-template-columns:repeat(auto-fit,minmax(105px,1fr));gap:8px;margin-top:12px}
+  .ai button{background:var(--card);color:var(--ink);border:1.5px solid var(--accent);font-size:13.5px}
+  .ai button.plain{border-color:var(--line);color:var(--sub)}
+  pre{white-space:pre-wrap;word-break:break-word;background:var(--bg);border:1px solid var(--line);
+    border-radius:10px;padding:12px;font-size:11.5px;max-height:300px;overflow:auto;
+    font-family:ui-monospace,Menlo,monospace;line-height:1.55}
+  .swatch{display:flex;align-items:center;gap:9px;margin-top:6px}
+  input[type=color]{width:46px;height:34px;padding:2px;border-radius:8px;border:1px solid var(--line);background:none}
+  .prev{border:1px solid var(--line);border-radius:10px;padding:14px;background:#fff;color:#333;margin-top:8px}
+  .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(80px);
+    background:var(--ok);color:#fff;padding:11px 22px;border-radius:24px;font-size:13.5px;
+    font-weight:600;opacity:0;transition:.25s;pointer-events:none;z-index:9}
+  .toast.on{transform:translateX(-50%);opacity:1}
+  details{margin-top:10px}
+  summary{font-size:12px;color:var(--accent-d);cursor:pointer;font-weight:600}
+  .em{display:grid;grid-template-columns:repeat(auto-fill,minmax(38px,1fr));gap:5px;margin-top:9px}
+  .em span{display:grid;place-items:center;padding:5px;border:1px solid var(--line);
+    border-radius:7px;background:var(--bg);font-size:9px;color:var(--sub);cursor:default}
+  .em img{width:22px;height:22px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>アメブロ役立ち記事 プロンプトメーカー</h1>
+<p class="lead">くるみ専用 ／ 21時の役立ち記事むけ。キーワードを入れる → プロンプトが出る → AIに貼る → 出てきたHTMLをアメブロの「HTML表示」に貼る。</p>
+
+<div class="card">
+  <h2><span class="n">1</span>キーワード</h2>
+  <label>メインキーワード<span class="hint">商品名でもOK</span></label>
+  <input type="text" id="kw" placeholder="例）ヤーマン レイボーテヴィーナス 口コミ" autocomplete="off">
+
+  <label>関連キーワード<span class="hint">任意・カンマか改行区切り</span></label>
+  <textarea id="sub" placeholder="例）効果 いつから, 痛い, vio, 50代"></textarea>
+
+  <div id="verdict" class="verdict" hidden></div>
+  <div id="ownWarn" class="warn" hidden></div>
+
+  <label>型を手で変える<span class="hint">自動判定でよければ触らなくてOK</span></label>
+  <select id="typeSel"></select>
+</div>
+
+<div class="card">
+  <h2><span class="n">2</span>記事のネタ元</h2>
+  <label>商品の事実データ<span class="hint">楽天ランキングの出力を貼る。空でも可</span></label>
+  <textarea id="facts" placeholder="商品名｜価格 ★評価 レビュー件数｜catchcopy｜URL&#10;を貼ると、おすすめ理由がこの事実だけで書かれます"></textarea>
+
+  <label>自分の感想・言いたいこと<span class="hint">任意。購入レビュー型なら必須</span></label>
+  <textarea id="memo" placeholder="例）お風呂で使えるのが一番よかった。照射音がちょっと大きい"></textarea>
+</div>
+
+<div class="card">
+  <h2><span class="n">3</span>見た目の設定</h2>
+
+  <label>テーマカラー</label>
+  <div class="swatch">
+    <input type="color" id="color" value="#d9769a">
+    <div class="row" id="palette"></div>
+  </div>
+
+  <label>見出しデザイン</label>
+  <div class="row" id="hStyles"></div>
+  <div class="prev" id="hPrev"></div>
+
+  <label>マイクロコピーの囲み記号</label>
+  <div class="row" id="marks"></div>
+
+  <label>マイクロコピーの文字色</label>
+  <div class="row" id="mcColor"></div>
+
+  <label>赤字の使い方</label>
+  <div class="row" id="redUse"></div>
+
+  <div class="prev" id="mcPrev"></div>
+
+  <details>
+    <summary>使う絵文字を見る（アメブロ公式絵文字・50個）</summary>
+    <div class="em" id="emGrid"></div>
+  </details>
+</div>
+
+<button class="go" id="gen">プロンプトを作る</button>
+
+<div class="card" id="out" hidden>
+  <h2><span class="n">4</span>できました</h2>
+  <div class="ai">
+    <button data-ai="claude">Claudeで開く</button>
+    <button data-ai="chatgpt">ChatGPTで開く</button>
+    <button data-ai="gemini">Geminiで開く</button>
+    <button class="plain" data-ai="">コピーだけ</button>
+  </div>
+  <details open><summary>プロンプトを確認する</summary><pre id="pre"></pre></details>
+</div>
+
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============ アメブロ公式絵文字（実URL検証済 char3/100-537） ============ */
+var EMOJI = [
+ [413,"メイクブラシ"],[414,"口紅"],[415,"マニキュア"],[416,"まつげ"],[417,"くちびる"],
+ [418,"シートマスク"],[419,"化粧水"],[411,"チーク"],[407,"香水"],[420,"サングラス"],
+ [317,"赤ちゃん"],[318,"女性"],[321,"おばあさん"],[436,"目"],[435,"脳"],
+ [371,"ダンベル"],[372,"力こぶ"],[368,"薬"],[373,"病院"],[105,"zzz"],
+ [473,"キラキラ"],[474,"星"],[145,"きらきら"],[142,"ハート"],[510,"緑ハート"],
+ [512,"水色ハート"],[514,"黄ハート"],[148,"サングラスハート"],[110,"炎"],[111,"警告"],
+ [520,"祝"],[523,"100点"],[114,"いいね"],[119,"OK"],[117,"ピース"],
+ [128,"拍手"],[517,"お祈り"],[526,"下ゆび"],[120,"上矢印"],[121,"下矢印"],
+ [332,"金貨"],[334,"お札"],[335,"札束"],[380,"飛行機"],[505,"新幹線"],
+ [224,"コーヒー"],[344,"太陽"],[349,"虹"],[109,"カメラ"],[519,"えんぴつ"]
+];
+var EURL = "https://stat100.ameba.jp/blog/ucs/img/char/char3/";
+function eTag(n,a){return '<img src="'+EURL+n+'.png" width="24" height="24" alt="'+a+'" style="vertical-align: text-bottom;">';}
+
+/* ============ 記事の型 ============ */
+var TYPES = {
+  review:{name:"購入レビュー型",own:true,
+    struct:["結論（買ってよかった／イマイチ）を最初に","なぜ買ったか（悩み）","届いて使ってみた実感（サイズ感・想像との差・悩みは解決したか）","気になった点も正直に","こういう人に向いてそう、で締める"],
+    kws:["使ってみた","買ってみた","レビュー","体験","感想","試してみた","使用感","本音"]},
+  voice:{name:"口コミまとめ型",own:false,
+    struct:["どんな声が多いのか、結論を先に","良い口コミの傾向を3つくらい","悪い口コミ・気になる声も隠さず","口コミを読んで自分はどう思ったか","こういう人なら合いそう、で締める"],
+    kws:["口コミ","評判","評価","レビュー件数","悪い","本当"]},
+  compare:{name:"比較型",own:false,
+    struct:["結論：どっちがどんな人向けか","違いを表で整理（3〜5項目）","それぞれの良いところ","値段の差をどう見るか","迷ってる人への一言で締める"],
+    kws:["比較","違い","どっち","どちら","vs","と の違い"]},
+  guide:{name:"購入ガイド型",own:false,
+    struct:["結論：どこで買うのが良さそうか","販売店ごとの状況","値段・ポイント還元の考え方（断定しない）","買うときに見ておきたい点","背中を押す一言で締める"],
+    kws:["どこで売ってる","販売店","最安値","どこで買える","安く","取扱","店舗","楽天","市販"]},
+  solve:{name:"お悩み解決型",own:false,
+    struct:["悩みへの共感（自分もそうだった）","なぜそうなるのか","じゃあどうするか、を具体的に","自分が試したこと","前向きな一言で締める"],
+    kws:["効果ない","効かない","悩み","対処","治し方","なぜ","原因","できない","続かない","失敗"]},
+  matome:{name:"情報まとめ型",own:false,
+    struct:["今これを見るべき理由（セール・季節・新作）","選び方の軸を2〜3個","候補を並べる","迷ったらコレ","締め"],
+    kws:["おすすめ","ランキング","選び方","一覧","まとめ","とは","人気","比べ"]}
+};
+
+/* ============ 見た目の選択肢 ============ */
+var HSTYLES = {
+  line:{name:"左ライン",css:function(c){return "border-left:6px solid "+c+";padding:8px 0 8px 12px;margin:28px 0 14px;font-size:18px;font-weight:bold;line-height:1.5;";}},
+  under:{name:"下線",css:function(c){return "border-bottom:3px solid "+c+";padding:0 2px 6px;margin:28px 0 14px;font-size:18px;font-weight:bold;line-height:1.5;";}},
+  fill:{name:"塗り",css:function(c){return "background:"+c+";color:#fff;padding:10px 14px;border-radius:6px;margin:28px 0 14px;font-size:17px;font-weight:bold;line-height:1.5;";}},
+  dash:{name:"点線囲み",css:function(c){return "border:2px dashed "+c+";padding:10px 14px;border-radius:8px;margin:28px 0 14px;font-size:17px;font-weight:bold;line-height:1.5;";}},
+  marker:{name:"マーカー",css:function(c){return "background:linear-gradient(transparent 62%,"+hex2rgba(c,.35)+" 62%);padding:0 2px;margin:28px 0 14px;font-size:18px;font-weight:bold;line-height:1.7;display:inline-block;";}}
+};
+var MARKS = {
+  arrow:["↓","↓"], slash:["＼","／"], sumi:["【","】"], tri:["▼","▼"], tri3:["↓↓↓",""]
+};
+var PALETTE = ["#d9769a","#c98a5a","#7a9ec9","#8aa87a","#a889c9","#5b5b5b"];
+
+var S = { type:null, auto:null, h:"line", mark:"tri", mc:"theme", red:"need" };
+
+/* ============ helpers ============ */
+function $(id){return document.getElementById(id);}
+function hex2rgba(h,a){var n=parseInt(h.slice(1),16);
+  return "rgba("+((n>>16)&255)+","+((n>>8)&255)+","+(n&255)+","+a+")";}
+function toast(m){var t=$("toast");t.textContent=m;t.classList.add("on");
+  setTimeout(function(){t.classList.remove("on");},1700);}
+function chips(host,items,cur,cb){
+  host.innerHTML="";
+  items.forEach(function(it){
+    var b=document.createElement("div");
+    b.className="chip"; b.textContent=it[1];
+    b.setAttribute("aria-pressed", it[0]===cur);
+    b.onclick=function(){cb(it[0]);};
+    host.appendChild(b);
+  });
+}
+
+/* ============ 型の自動判定 ============ */
+function detect(kw){
+  var t=kw.replace(/\s+/g," ").toLowerCase(), best=null, bs=0, hit="";
+  for(var k in TYPES){
+    var s=0,h="";
+    TYPES[k].kws.forEach(function(w){
+      if(t.indexOf(w.toLowerCase())>=0){ s+=w.length; if(w.length>h.length)h=w; }
+    });
+    if(s>bs){bs=s;best=k;hit=h;}
+  }
+  if(!best) return {type:"matome",why:"はっきりした手がかりが無いので、いちばん外れにくい型にしました"};
+  return {type:best,why:"「"+hit+"」が入っているので"};
+}
+
+function refreshVerdict(){
+  var kw=$("kw").value.trim();
+  var v=$("verdict"), w=$("ownWarn");
+  if(!kw){ v.hidden=true; w.hidden=true; return; }
+  var d=detect(kw);
+  S.auto=d.type;
+  if(!S.type) S.type=d.type;
+  $("typeSel").value=S.type;
+  v.hidden=false;
+  v.innerHTML="この記事は <b>"+TYPES[S.type].name+"</b> で書きます"+
+    (S.type===S.auto?'<span class="why">'+d.why+'</span>':'<span class="why">手で選んだ型（自動判定は「'+TYPES[S.auto].name+'」でした）</span>');
+  w.hidden = !TYPES[S.type].own;
+  if(TYPES[S.type].own){
+    w.innerHTML="<b>購入レビュー型を選んでいます。</b><br>これは<b>実際に買ったもの</b>だけ。いま登録があるのは「ヤーマン レイボーテヴィーナス ビューティープラス」だけです。それ以外なら「気になってる」で書く型（口コミまとめ型など）に変えてください。";
+  }
+}
+
+/* ============ プレビュー ============ */
+function refreshPrev(){
+  var c=$("color").value;
+  $("hPrev").innerHTML='<div style="'+HSTYLES[S.h].css(c)+'">'+
+    eTag(418,"シートマスク")+' 実際に使ってわかったこと</div>'+
+    '<div style="color:#333;font-size:14px;">見出しの下の本文はこんな感じで続きます。</div>';
+  var m=MARKS[S.mark], col=(S.mc==="theme"?c:"#333333");
+  var body='<span style="color:'+col+';font-weight:bold;">'+m[0]+
+    'レビュー4万件超えは、さすがに気になる'+m[1]+'</span>';
+  if(S.red!=="none") body+='<div style="color:#cc0000;font-weight:bold;font-size:14px;">セールは今週までみたい</div>';
+  $("mcPrev").innerHTML='<div style="font-size:14px;color:#333">'+body+'</div>'+
+    '<div style="font-size:11px;color:#999;margin-top:6px">（この下にAmeba Pickが入る）</div>';
+}
+
+/* ============ プロンプト生成 ============ */
+function buildPrompt(){
+  var kw=$("kw").value.trim();
+  if(!kw){ toast("キーワードを入れてね"); $("kw").focus(); return null; }
+  var subs=$("sub").value.split(/[,、\n]/).map(function(s){return s.trim();}).filter(Boolean);
+  var facts=$("facts").value.trim();
+  var memo=$("memo").value.trim();
+  var c=$("color").value;
+  var T=TYPES[S.type];
+  var m=MARKS[S.mark];
+  var mcCol=(S.mc==="theme"?c:"#333333");
+  var redTxt={none:"赤字は使わない",need:"セール・在庫・期限の話のときだけ赤字(#cc0000)を使う",all:"マイクロコピーは全部赤字(#cc0000)にする"}[S.red];
+
+  var emList=EMOJI.map(function(e){return e[1]+"="+e[0];}).join("、");
+
+  var P=[];
+  P.push("あなたは、50代女性ブロガー「くるみ」本人として、アメブロの記事を書きます。");
+  P.push("出力は【アメブロのHTML表示にそのまま貼れるHTML】です。説明文や前置きは一切書かず、HTMLだけを出力してください。");
+  P.push("");
+  P.push("■ 今回のテーマ");
+  P.push("メインキーワード：" + kw);
+  if(subs.length) P.push("関連キーワード（本文のどこかに自然に入れる）：" + subs.join(" / "));
+  P.push("記事の型：" + T.name);
+  P.push("");
+  P.push("■ 書き手「くるみ」の設定（絶対に守る）");
+  P.push("・50代・地方在住・接客業（シフト制）・未婚・子なし・一人暮らし");
+  P.push("・具体的な年齢、県名、市名、職種の詳細、年収は書かない");
+  P.push("・30代後半から顔の悩みが始まり、ゴルゴ線とたるみに10年以上悩んでいる");
+  P.push("・ヒアルロン酸を入れたけど改善せず顔が大きくなった＝一度失敗している");
+  P.push("・眼瞼下垂の手術は地元、本格的な手術は東京まで遠征した");
+  P.push("・普段は地味に倹約するのに、顔にはドカンと課金するタイプ");
+  P.push("・お金の話は『稼いでるから払えた』ではなく『コツコツ貯めて一気に使った』で書く");
+  P.push("・読者は同世代（40〜60代）のおひとりさま。読者が自分に置き換えて読めるように書く");
+  P.push("");
+  P.push("■ 口調（ここが一番大事。外すとやり直し）");
+  P.push("・友達に話すような、正直でくだけたブログ口調。飾らない");
+  P.push("・ベースは「です・ます」に「〜だよね」「〜よね？」「〜くない？」「〜わ」「〜だが」を混ぜる");
+  P.push("・最大の持ち味は【カッコ内のツッコミ】。文の後ろに（　）で心の声を足す。これを最低3回入れる");
+  P.push("　実例：「ぽっちゃり（いや、小デブ？）」「結局顔が大きくなるよね？（おかしくね？）」");
+  P.push("　　　　「クマ治療も勧められた！！（自覚症状なし）」「え、私インディアン？（笑）」");
+  P.push("　　　　「（でも暇あれば検索してたわ）」「（チクショー！）」");
+  P.push("・自虐はカラッと軽く。見栄を張らず正直に");
+  P.push("・ネガティブも書いてよいが、最後は必ず前向きに締める（感傷的にしすぎない）");
+  P.push("・絶対に使わない：小説みたいな凝った一文、キメた比喩、「〜のだ」「〜である」調、「〜しちゃいました」");
+  P.push("・1〜2文ごとに改行。ボケや大事な一言は独立した行にする");
+  P.push("");
+  P.push("■ 記事の構成（" + T.name + "）");
+  T.struct.forEach(function(s,i){ P.push((i+1)+". "+s); });
+  P.push("");
+  P.push("■ 文字数");
+  P.push("本文は900〜1400字。見出しは3〜5個。");
+  P.push("");
+  if(facts){
+    P.push("■ 商品の事実データ（ここに書いてあることだけを根拠にする。想像で足さない）");
+    P.push(facts);
+    P.push("");
+  }
+  if(memo){
+    P.push("■ くるみ本人のメモ（必ず反映する）");
+    P.push(memo);
+    P.push("");
+  }
+  if(!T.own){
+    P.push("■ 【最重要】この記事では『使った感想』を書いてはいけません");
+    P.push("この商品はくるみがまだ使っていません。使用感・効果を書くと嘘になります。");
+    P.push("「気になってる」「レビュー○件で人気みたい」「こういう人に向いてそう」で書いてください。");
+    P.push("本文のどこかに『まだ使ってないので効果は書けません。使ったら正直に書きます』の一言を入れてください。");
+    P.push("");
+  }
+  P.push("■ 出力するHTMLの仕様（アメブロ専用。ここを外すと貼っても崩れます）");
+  P.push("1. classや<style>タグ、外部CSSは使えません。装飾はすべてタグのstyle属性に直接書く");
+  P.push("2. 本文は1行ずつ <div>…</div> で囲む。空行は <div><br></div>");
+  P.push("3. <p>、<h1>〜<h6>、<ul>、<li> は使わない。見出しも下記の<div>で作る");
+  P.push("4. 見出しは必ずこの形式：");
+  P.push('   <div style="' + HSTYLES[S.h].css(c) + '">見出しテキスト</div>');
+  P.push("5. 強調したい語は <span style=\"font-weight:bold;color:" + c + ";\">…</span>");
+  P.push("6. マーカーを引きたい語は <span style=\"background:linear-gradient(transparent 62%," + hex2rgba(c,.35) + " 62%);\">…</span>");
+  P.push("7. 表を使う場合は <table style=\"width:100%;border-collapse:collapse;font-size:14px;\"> と");
+  P.push('   <td style="border:1px solid #ddd;padding:8px;"> で組む（比較型は表を必ず入れる）');
+  P.push("");
+  P.push("■ アメブロ公式絵文字（見出しの頭や文中に、合計8〜14個くらい入れる）");
+  P.push("次の形式で書く。数字を差し替えるだけ：");
+  P.push('<img src="' + EURL + '【番号】.png" width="24" height="24" alt="【名前】" style="vertical-align: text-bottom;">');
+  P.push("使える番号：" + emList);
+  P.push("※このリストにある番号だけを使う。他の番号は存在しないので絶対に作らない");
+  P.push("");
+  P.push("■ マイクロコピーとAmeba Pickの目印（文頭・文中・文末の3か所）");
+  P.push("Pickを入れる場所ごとに、必ず次の2行をこの順で出力する。");
+  P.push("【1行目】読者に見せるおすすめ理由。この形式で出す：");
+  P.push('<div style="color:' + mcCol + ';font-weight:bold;">' + m[0] + 'ここにおすすめ理由' + m[1] + '</div>');
+  P.push("【2行目】くるみの作業用メモ。必ず1行に収める：");
+  P.push("（Pick挿入→ 商品名｜価格 ★評価 レビュー件数｜おすすめ理由｜URL）");
+  P.push("・商品名はPickの検索窓にそのまま貼れる形にする（【半額】送料無料などのノイズは削る）");
+  P.push("・おすすめ理由には、口コミ件数・値段・クーポン・セール終了など判断材料になる事実を入れる");
+  P.push("・" + redTxt);
+  P.push("・【ここにリンク】のようなプレースホルダは絶対に書かない（公開されてしまうため）");
+  P.push("");
+  P.push("■ 禁止事項");
+  P.push("・効果の断定をしない（特に美容・医療）。「必ず痩せる」「シミが消える」はNG");
+  P.push("・マンジャロなど処方薬の入手方法を書かない。処方薬の商品リンクも不可");
+  P.push("・クリニック名は出さない");
+  P.push("・価格やセールは「〜らしい」「〜みたい」でぼかす（変動するため）");
+  P.push("・記事に実際の日付を書かない。「あれから〇ヶ月」のように経過期間で書く");
+  P.push("");
+  P.push("■ 出力の順番");
+  P.push("1行目に「タイトル：」＋記事タイトル（感情ワード×具体的な数字。30文字前後）");
+  P.push("2行目に「ハッシュタグ：」＋ #タグ を10個スペース区切りで");
+  P.push("3行目以降に、本文のHTMLだけ（コードブロックで囲まずそのまま出す）");
+
+  return P.join("\n");
+}
+
+/* ============ init ============ */
+(function(){
+  // 型セレクト
+  var sel=$("typeSel");
+  for(var k in TYPES){
+    var o=document.createElement("option"); o.value=k; o.textContent=TYPES[k].name; sel.appendChild(o);
+  }
+  sel.onchange=function(){ S.type=sel.value; refreshVerdict(); };
+  $("kw").oninput=function(){ S.type=null; refreshVerdict(); };
+
+  // パレット
+  chips($("palette"), PALETTE.map(function(c){return [c,"●"];}), null, function(c){
+    $("color").value=c; refreshPrev();
+  });
+  Array.prototype.forEach.call($("palette").children,function(el,i){
+    el.style.color=PALETTE[i]; el.style.fontSize="17px"; el.style.padding="4px 9px";
+  });
+  $("color").oninput=refreshPrev;
+
+  // 見出し
+  var hs=Object.keys(HSTYLES).map(function(k){return [k,HSTYLES[k].name];});
+  function drawH(){ chips($("hStyles"),hs,S.h,function(v){S.h=v;drawH();refreshPrev();}); }
+  drawH();
+
+  // 記号
+  var mk=[["arrow","↓〜↓"],["slash","＼〜／"],["sumi","【〜】"],["tri","▼〜▼"],["tri3","↓↓↓"]];
+  function drawM(){ chips($("marks"),mk,S.mark,function(v){S.mark=v;drawM();refreshPrev();}); }
+  drawM();
+
+  // 文字色
+  var mc=[["theme","テーマカラー"],["gray","濃いグレー"]];
+  function drawC(){ chips($("mcColor"),mc,S.mc,function(v){S.mc=v;drawC();refreshPrev();}); }
+  drawC();
+
+  // 赤字
+  var ru=[["none","使わない"],["need","必要なときだけ"],["all","すべて赤字"]];
+  function drawR(){ chips($("redUse"),ru,S.red,function(v){S.red=v;drawR();refreshPrev();}); }
+  drawR();
+
+  // 絵文字グリッド
+  $("emGrid").innerHTML = EMOJI.map(function(e){
+    return '<span title="'+e[1]+' ('+e[0]+')"><img src="'+EURL+e[0]+'.png" alt="'+e[1]+'"></span>';
+  }).join("");
+
+  refreshPrev();
+
+  // 生成
+  var prompt="";
+  $("gen").onclick=function(){
+    var p=buildPrompt(); if(!p) return;
+    prompt=p; $("pre").textContent=p; $("out").hidden=false;
+    $("out").scrollIntoView({behavior:"smooth",block:"start"});
+  };
+
+  var URLS={claude:"https://claude.ai/new",chatgpt:"https://chatgpt.com/",gemini:"https://gemini.google.com/app"};
+  document.querySelectorAll(".ai button").forEach(function(b){
+    b.onclick=function(){
+      if(!prompt) return;
+      var done=function(){
+        var ai=b.dataset.ai;
+        if(ai){ toast("コピーしました。貼り付けてね"); window.open(URLS[ai],"_blank","noopener"); }
+        else toast("コピーしました");
+      };
+      if(navigator.clipboard&&navigator.clipboard.writeText){
+        navigator.clipboard.writeText(prompt).then(done).catch(fallback);
+      } else fallback();
+      function fallback(){
+        var ta=document.createElement("textarea");
+        ta.value=prompt; ta.style.position="fixed"; ta.style.opacity="0";
+        document.body.appendChild(ta); ta.select();
+        try{document.execCommand("copy");}catch(e){}
+        document.body.removeChild(ta); done();
+      }
+    };
+  });
+})();
+</script>
+</body>
+</html>
