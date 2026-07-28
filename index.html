@@ -125,7 +125,7 @@
   <div class="prev" id="mcPrev"></div>
 
   <details>
-    <summary>使う絵文字を見る（アメブロ公式絵文字・50個）</summary>
+    <summary>使う絵文字を見る（アメブロ公式絵文字・65個）</summary>
     <div class="em" id="emGrid"></div>
   </details>
 </div>
@@ -147,7 +147,10 @@
 <div class="toast" id="toast"></div>
 
 <script>
-/* ============ アメブロ公式絵文字（実URL検証済 char3/100-537） ============ */
+/* ============ アメブロ公式絵文字（実URL検証済） ============
+   char3/100-537（438個）… 通常の絵文字
+   char4/590-679（90個） … 顔文字・うさぎ・赤ちゃん・文字系（「笑」「泣」など）
+   ※char1,2,5,6,7,8 は存在しない                                    */
 var EMOJI = [
  [413,"メイクブラシ"],[414,"口紅"],[415,"マニキュア"],[416,"まつげ"],[417,"くちびる"],
  [418,"シートマスク"],[419,"化粧水"],[411,"チーク"],[407,"香水"],[420,"サングラス"],
@@ -160,8 +163,15 @@ var EMOJI = [
  [332,"金貨"],[334,"お札"],[335,"札束"],[380,"飛行機"],[505,"新幹線"],
  [224,"コーヒー"],[344,"太陽"],[349,"虹"],[109,"カメラ"],[519,"えんぴつ"]
 ];
-var EURL = "https://stat100.ameba.jp/blog/ucs/img/char/char3/";
-function eTag(n,a){return '<img src="'+EURL+n+'.png" width="24" height="24" alt="'+a+'" style="vertical-align: text-bottom;">';}
+// char4（本人が実際に使っていた表情豊かなセット）
+var EMOJI4 = [
+ [664,"笑"],[665,"泣"],[627,"魂が抜ける"],[596,"泣き顔"],[593,"ハート目"],
+ [594,"サングラス"],[595,"あせ"],[599,"びっくり"],[606,"うるうる"],[590,"メガネ"],
+ [612,"はてな"],[611,"びっくりマーク"],[673,"ひらめき"],[672,"流れ星"],[609,"愛"]
+];
+var CBASE = "https://stat100.ameba.jp/blog/ucs/img/char/";
+var EURL = CBASE + "char3/";
+function eTag(n,a,set){return '<img src="'+CBASE+(set||"char3")+'/'+n+'.png" width="24" height="24" alt="'+a+'" style="vertical-align: text-bottom;">';}
 
 /* ============ 記事の型 ============ */
 var TYPES = {
@@ -346,6 +356,7 @@ function buildPrompt(){
     P.push("");
   }
   P.push("■ 出力するHTMLの仕様（アメブロ専用。ここを外すと貼っても崩れます）");
+  P.push("0. 使ってよいタグは <div> <br> <img> <font> だけ。それ以外のタグは弾かれることがあるので使わない");
   P.push("1. classや<style>タグ、外部CSSは使えません。装飾はすべてタグのstyle属性に直接書く");
   P.push("2. 本文は1行ずつ <div>…</div> で囲む。空行は <div><br></div>");
   P.push("3. <p>、<h1>〜<h6>、<ul>、<li> は使わない。見出しも下記の<div>で作る");
@@ -359,11 +370,14 @@ function buildPrompt(){
   P.push("■ 絵文字（2種類を混ぜて使う）");
   P.push("(A) ふつうのUnicode絵文字。本人が一番よく使うのはこれ。文末や合いの手に自然に入れる");
   P.push("　　よく使うもの：‼️ 👇 ✨ 💊 👍 🐜 🙇‍♂️⤵️ 🥲 😂");
-  P.push("(B) アメブロ公式絵文字。見出しの頭やアクセントに数個だけ。");
-  P.push("次の形式で書く。数字を差し替えるだけ：");
-  P.push('<img src="' + EURL + '【番号】.png" width="24" height="24" alt="【名前】" style="vertical-align: text-bottom;">');
-  P.push("使える番号：" + emList);
+  P.push("(B) アメブロ公式絵文字。感情の強調に使う。1記事に5〜10個。");
+  P.push("次の形式で書く。同じ絵文字を2〜3個続けて並べると本人らしくなる：");
+  P.push('<img src="' + CBASE + 'char3/【番号】.png" width="24" height="24" alt="【名前】" style="vertical-align: text-bottom;">');
+  P.push("char3 で使える番号：" + emList);
+  P.push('<img src="' + CBASE + 'char4/【番号】.png" width="24" height="24" alt="【名前】" style="vertical-align: text-bottom;">');
+  P.push("char4 で使える番号：" + EMOJI4.map(function(e){return e[1]+"="+e[0];}).join("、"));
   P.push("※このリストにある番号だけを使う。他の番号は存在しないので絶対に作らない");
+  P.push("※char3とchar4を取り違えない（URLの中の char3 / char4 を必ず合わせる）");
   P.push("");
   P.push("■ マイクロコピーとAmeba Pickの目印（文頭・文中・文末の3か所）");
   P.push("Pickを入れる場所ごとに、必ず次の2行をこの順で出力する。");
@@ -451,9 +465,13 @@ function buildPrompt(){
   drawR();
 
   // 絵文字グリッド
-  $("emGrid").innerHTML = EMOJI.map(function(e){
-    return '<span title="'+e[1]+' ('+e[0]+')"><img src="'+EURL+e[0]+'.png" alt="'+e[1]+'"></span>';
-  }).join("");
+  $("emGrid").innerHTML =
+    EMOJI.map(function(e){
+      return '<span title="'+e[1]+' (char3/'+e[0]+')"><img src="'+CBASE+'char3/'+e[0]+'.png" alt="'+e[1]+'"></span>';
+    }).join("") +
+    EMOJI4.map(function(e){
+      return '<span title="'+e[1]+' (char4/'+e[0]+')"><img src="'+CBASE+'char4/'+e[0]+'.png" alt="'+e[1]+'"></span>';
+    }).join("");
 
   refreshPrev();
 
