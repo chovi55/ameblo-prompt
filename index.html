@@ -101,6 +101,20 @@
 
   <label>自分の感想・言いたいこと<span class="hint">任意。購入レビュー型なら必須</span></label>
   <textarea id="memo" placeholder="例）お風呂で使えるのが一番よかった。照射音がちょっと大きい"></textarea>
+
+  <details id="ownBox">
+    <summary>持ってるものリストを編集する（<span id="ownCount">0</span>件）</summary>
+    <p class="hint" style="margin:8px 0 0">
+      ここに書いたものだけ「使ってみた」と書けます。1行に1つ。
+      買ったら足してください。この端末に保存されます。
+    </p>
+    <textarea id="ownList" style="min-height:130px"
+      placeholder="ヤーマン レイボーテヴィーナス ビューティープラス（光美容器。お風呂で使える）"></textarea>
+    <div class="row" style="margin-top:8px">
+      <div class="chip" id="ownSave">保存する</div>
+      <div class="chip" id="ownReset">最初の状態に戻す</div>
+    </div>
+  </details>
 </div>
 
 <div class="card">
@@ -229,6 +243,28 @@ var PALETTE = ["#d9769a","#c98a5a","#7a9ec9","#8aa87a","#a889c9","#5b5b5b"];
 
 var S = { type:null, auto:null, h:"line", mark:"tri", mc:"theme", red:"need" };
 
+/* ============ 持ってるものリスト（端末に保存） ============ */
+var OWN_KEY = "kurumiOwnedItems";
+var OWN_DEFAULT = [
+ "ヤーマン レイボーテヴィーナス ビューティープラス（光美容器。お風呂で使える。「脱毛」ではなく「ムダ毛ケア」と書く）",
+ "Dr.G レッドブレミッシュ クリア スージングクリーム（シカクリーム。リピート中。「面倒だからいつも2個買い」）",
+ "AKAISHI スカルプ＆シャンプーブラシ ハード HB-127（「気持ちいい」が本人の感想）",
+ "メディキューブ AGE-R 美顔器3台（旧世代。ほぼ使っていない＝三日坊主。そこを正直に書くのはOK）"
+];
+function ownRead(){
+  try{ var v=localStorage.getItem(OWN_KEY); if(v!==null) return v; }catch(e){}
+  return OWN_DEFAULT.join("\n");
+}
+function ownItems(){
+  return ownRead().split("\n").map(function(s){return s.trim();}).filter(Boolean);
+}
+// 編集中のテキスト欄が正なら、そちらの件数を数える（保存前でも件数が合うように）
+function ownItemsLive(){
+  var el=document.getElementById("ownList");
+  var src=(el && el.value!==undefined) ? el.value : ownRead();
+  return src.split("\n").map(function(s){return s.trim();}).filter(Boolean);
+}
+
 /* ============ helpers ============ */
 function $(id){return document.getElementById(id);}
 function hex2rgba(h,a){var n=parseInt(h.slice(1),16);
@@ -276,7 +312,11 @@ function refreshVerdict(){
     (S.type===S.auto?'<span class="why">'+d.why+'</span>':'<span class="why">手で選んだ型（自動判定は「'+TYPES[S.auto].name+'」でした）</span>');
   w.hidden = !TYPES[S.type].own;
   if(TYPES[S.type].own){
-    w.innerHTML="<b>購入レビュー型＝実際に買ったものだけ。</b><br>いま書けるのは：ヤーマン レイボーテヴィーナス／Dr.G シカクリーム／AKAISHI スカルプブラシ／メディキューブ AGE-R（3台・ほぼ使ってない話ならOK）。それ以外は「気になってる」で書く型（口コミまとめ型など）に変えてください。";
+    var names=ownItems().map(function(x){return x.split("（")[0].trim();});
+    w.innerHTML="<b>この型は、実際に使ったものだけ。</b><br>いま書けるのは："
+      + names.join(" ／ ")
+      + "。それ以外は「気になってる」で書く型（口コミまとめ型など）に変えてください。"
+      + "<br>買い足したものがあれば、上の<b>「持ってるものリストを編集する」</b>から追加してください。";
   }
 }
 
@@ -419,10 +459,7 @@ function buildPrompt(){
   P.push("（別の型なら「気になってる」として書けます。型を変えてください）");
   P.push("");
   P.push("■ くるみが実際に持っている物（使用感を書いてよいのはこのリストだけ）");
-  P.push("・ヤーマン レイボーテヴィーナス ビューティープラス（光美容器。お風呂で使える。「脱毛」ではなく「ムダ毛ケア」と書く）");
-  P.push("・Dr.G レッドブレミッシュ クリア スージングクリーム（シカクリーム。リピート中。「面倒だからいつも2個買い」）");
-  P.push("・AKAISHI スカルプ＆シャンプーブラシ ハード HB-127（「気持ちいい」が本人の感想）");
-  P.push("・メディキューブ AGE-R 美顔器3台（旧世代。ほぼ使っていない＝三日坊主。そこを正直に書くのはOK）");
+  ownItems().forEach(function(x){ P.push("・"+x); });
   P.push("");
   if(T.own){
     P.push("■ 購入レビュー型の注意");
@@ -583,6 +620,26 @@ function buildPrompt(){
   var ru=[["none","使わない"],["need","必要なときだけ"],["all","すべて赤字"]];
   function drawR(){ chips($("redUse"),ru,S.red,function(v){S.red=v;drawR();refreshPrev();}); }
   drawR();
+
+  // 持ってるものリスト
+  function ownRefresh(){
+    $("ownCount").textContent = ownItemsLive().length;
+    refreshVerdict();
+  }
+  $("ownList").value = ownRead();
+  $("ownList").oninput = function(){ $("ownCount").textContent = ownItemsLive().length; };
+  ownRefresh();
+  $("ownSave").onclick=function(){
+    try{ localStorage.setItem(OWN_KEY, $("ownList").value); toast("保存しました"); }
+    catch(e){ toast("保存できませんでした"); }
+    ownRefresh();
+  };
+  $("ownReset").onclick=function(){
+    if(!confirm("最初の4件に戻します。よろしいですか？")) return;
+    try{ localStorage.removeItem(OWN_KEY); }catch(e){}
+    $("ownList").value = ownRead();
+    toast("戻しました"); ownRefresh();
+  };
 
   // 絵文字グリッド
   $("emGrid").innerHTML =
