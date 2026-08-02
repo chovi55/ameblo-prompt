@@ -158,11 +158,15 @@
 <div class="card" id="out" hidden>
   <h2><span class="n">4</span>できました</h2>
   <div class="ai">
-    <button data-ai="claude">Claudeで開く</button>
+    <button data-ai="claude" style="border-width:2.5px">Claudeで開く ★おすすめ</button>
     <button data-ai="chatgpt">ChatGPTで開く</button>
     <button data-ai="gemini">Geminiで開く</button>
     <button class="plain" data-ai="">コピーだけ</button>
   </div>
+  <p class="hint" style="margin:10px 0 0">
+    Claudeが一番、話の筋が通った記事になります（2026-08-03時点の実感）。
+    HTMLで出てこなかったら「HTMLで出して」と一言送れば直ります。
+  </p>
   <details open><summary>プロンプトを確認する</summary><pre id="pre"></pre></details>
 </div>
 
@@ -573,11 +577,23 @@ function buildPrompt(){
     P.push("署名はアメブロアプリの署名ブロックで別途入れるため、本文に書くと二重になります。");
     P.push("");
   }
-  P.push("■ 出力の順番");
-  P.push("1行目に「タイトル：」＋記事タイトル（感情ワード×具体的な数字。30文字前後）");
-  P.push("　タイトルにも“他と違う点”を入れる。「オールインワンが便利」ではなく「1回3g使えるオールインワン」のように");
-  P.push("2行目に「ハッシュタグ：」＋ #タグ を10個スペース区切りで");
-  P.push("3行目以降に、本文のHTMLだけ（コードブロックで囲まずそのまま出す）");
+  P.push("=========================================");
+  P.push("■ 【出力形式・これだけは絶対】");
+  P.push("=========================================");
+  P.push("本文は必ず HTML で出力してください。ふつうの文章で返さないでください。");
+  P.push("1行ごとに <div>…</div> で囲み、空行は <div><br></div> にします。");
+  P.push("これはアメブロのHTML編集画面にそのまま貼るためです。HTMLでないと使えません。");
+  P.push("");
+  P.push("出力はこの形にしてください（3行目以降がHTML本体）：");
+  P.push("");
+  P.push("タイトル：（記事タイトル）");
+  P.push("ハッシュタグ：#タグ1 #タグ2 …（10個）");
+  P.push("<div>1行目の文章です。</div><div><br></div><div>2行目の文章です。</div>");
+  P.push("");
+  P.push("・タイトルは感情×具体的な数字。30文字前後。“他と違う点”を入れる");
+  P.push("　（「オールインワンが便利」ではなく「1回3g使えるオールインワン」のように）");
+  P.push("・コードブロック（```）で囲まない。前置きも解説も書かない");
+  P.push("・<div> が1つも無い出力はやり直しです");
 
   return P.join("\n");
 }
