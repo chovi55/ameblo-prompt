@@ -108,10 +108,15 @@
       ここに書いたものだけ「使ってみた」と書けます。1行に1つ。
       買ったら足してください。この端末に保存されます。
     </p>
+    <p class="hint" style="margin:6px 0 0">
+      ★書いたら「まとめてコピー」を押して、スプレッドシートの
+      <b>「持ち物」タブ</b>に貼ってください。毎朝の記事づくりはそちらを見ています。
+    </p>
     <textarea id="ownList" style="min-height:130px"
       placeholder="ヤーマン レイボーテヴィーナス ビューティープラス（光美容器。お風呂で使える）"></textarea>
     <div class="row" style="margin-top:8px">
       <div class="chip" id="ownSave">保存する</div>
+      <div class="chip" id="ownCopy">まとめてコピー</div>
       <div class="chip" id="ownReset">最初の状態に戻す</div>
     </div>
   </details>
@@ -685,6 +690,23 @@ function buildPrompt(){
     catch(e){ toast("保存できませんでした"); }
     ownRefresh();
   };
+  // スプレッドシートの「持ち物」タブへ写すため、1行1件のまま丸ごとコピーする
+  $("ownCopy").onclick=function(){
+    var txt = ownItemsLive().join("\n");
+    if(!txt){ toast("リストが空です"); return; }
+    var done=function(){ toast(ownItemsLive().length+"件コピーしました。シートの「持ち物」タブに貼ってください"); };
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(txt).then(done, function(){ fallbackCopy(txt, done); });
+    } else { fallbackCopy(txt, done); }
+  };
+  function fallbackCopy(txt, done){
+    var ta=document.createElement("textarea");
+    ta.value=txt; ta.style.position="fixed"; ta.style.opacity="0";
+    document.body.appendChild(ta); ta.select();
+    try{ document.execCommand("copy"); done(); }
+    catch(e){ toast("コピーできませんでした。手で選択してください"); }
+    document.body.removeChild(ta);
+  }
   $("ownReset").onclick=function(){
     if(!confirm("最初の4件に戻します。よろしいですか？")) return;
     try{ localStorage.removeItem(OWN_KEY); }catch(e){}
